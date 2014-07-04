@@ -1,0 +1,12 @@
+.coverage
+.env
+.DS_Store
+.Python
+capture.dump
+*.db
+*.pyc
+*.sublime-project
+*.sublime-workspace
+*.egg-info/
+build/
+dist/
