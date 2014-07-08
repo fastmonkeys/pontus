@@ -32,12 +32,12 @@ class TestAmazonS3SignedRequest(object):
         assert signed_request.key == 'test-unvalidated-uploads/file_name.png'
 
     def test_get_signature(self, signed_request):
-        signature = signed_request.get_signature('some policy')
+        signature = signed_request._get_signature('some policy')
         assert signature == 'tQ3+Ydxq/dq4mGy8X65ApZDHXy4='
 
     def test_get_policy_document(self, signed_request):
         with freezegun.freeze_time('2007-12-01 12:05:37.572123'):
-            policy = signed_request.get_policy_document()
+            policy = signed_request._get_policy_document()
         data_as_json = base64.b64decode(policy)
         data = json.loads(data_as_json)
         assert data == {
@@ -55,12 +55,12 @@ class TestAmazonS3SignedRequest(object):
     def test_form_fields(self, signed_request):
         (
             flexmock(signed_request)
-            .should_receive('get_policy_document')
+            .should_receive('_get_policy_document')
             .and_return(u'policy')
         )
         (
             flexmock(signed_request)
-            .should_receive('get_signature')
+            .should_receive('_get_signature')
             .and_return(u'signature')
         )
         assert signed_request.form_fields == {

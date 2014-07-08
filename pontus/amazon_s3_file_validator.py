@@ -74,12 +74,12 @@ class AmazonS3FileValidator(object):
             except ValidationError as e:
                 self.errors.append(e.error)
 
-        if not self.errors and self.has_unvalidated_prefix():
-            self.move_to_validated()
+        if not self.errors and self._has_unvalidated_prefix():
+            self._move_to_validated()
 
         return len(self.errors) == 0
 
-    def has_unvalidated_prefix(self):
+    def _has_unvalidated_prefix(self):
         return (
             current_app.config.get('AWS_UNVALIDATED_PREFIX') and
             self.file.name.startswith(
@@ -87,7 +87,7 @@ class AmazonS3FileValidator(object):
             )
         )
 
-    def move_to_validated(self):
+    def _move_to_validated(self):
         new_name = self.file.name[
             len(current_app.config.get('AWS_UNVALIDATED_PREFIX')):
         ]

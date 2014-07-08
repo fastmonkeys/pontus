@@ -97,17 +97,17 @@ class AmazonS3SignedRequest(object):
 
         :return: a dictionary containing the needed field values
         """
-        policy = self.get_policy_document()
+        policy = self._get_policy_document()
         return {
             'AWSAccessKeyId': self.storage.access_key,
             'acl': self.storage.acl,
             'key': self.key,
             'Policy': policy,
             'success_action_status': self.success_action_status,
-            'Signature': self.get_signature(policy),
+            'Signature': self._get_signature(policy),
         }
 
-    def get_policy_document(self):
+    def _get_policy_document(self):
         expiration = datetime.utcnow() + timedelta(seconds=self.expires_in)
         data = {
             'expiration': expiration.isoformat() + 'Z',
@@ -123,7 +123,7 @@ class AmazonS3SignedRequest(object):
         data = json.dumps(data)
         return base64.b64encode(data)
 
-    def get_signature(self, policy_document):
+    def _get_signature(self, policy_document):
         return base64.encodestring(hmac.new(
             self.storage.secret_key,
             policy_document,
