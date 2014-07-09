@@ -1,5 +1,5 @@
 pontus
-======
+------
 
 Flask-Storage utils for:
 - signing Amazon S3 POST requests
