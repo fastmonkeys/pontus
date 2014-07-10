@@ -4,7 +4,7 @@ import magic
 from .exceptions import ValidationError
 
 
-class AmazonS3FileValidator(object):
+class BaseValidator(object):
     """A base class for validators used with :class:`AmazonS3FileValidator`."""
     def __call__(self, storage_file):
         """
@@ -15,7 +15,7 @@ class AmazonS3FileValidator(object):
         raise NotImplementedError
 
 
-class MimeType(AmazonS3FileValidator):
+class MimeType(BaseValidator):
     """Validator for file MIME type.
 
     Uses python-magic to determine MIME type. python-magic depends on
@@ -51,7 +51,7 @@ class MimeType(AmazonS3FileValidator):
             )
 
 
-class FileSize(AmazonS3FileValidator):
+class FileSize(BaseValidator):
     """Validator for file size.
 
     Example::

@@ -5,12 +5,13 @@ import pytest
 
 from pontus import AmazonS3FileValidator
 from pontus.exceptions import ValidationError
+from pontus.validators import BaseValidator
 
 
 HOUR_IN_SECONDS = 60 * 60
 
 
-class CustomValidator(object):
+class CustomValidator(BaseValidator):
     def __call__(self, storage_file):
         if storage_file.name != 'test-unvalidated-uploads/images/hello.jpg':
             raise ValidationError('Invalid.')

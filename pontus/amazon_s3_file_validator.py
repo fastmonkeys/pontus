@@ -46,7 +46,7 @@ class AmazonS3FileValidator(object):
 
     :param validators:
         List of validators. A validator can either be an instance of a class
-        inheriting :class:`AmazonS3FileValidator` or a callable
+        inheriting :class:`BaseValidator` or a callable
         function that takes `storage_file` as a parameter.
 
     """
