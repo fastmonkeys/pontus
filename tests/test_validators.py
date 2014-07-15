@@ -38,6 +38,11 @@ class TestMimeTypeValidator(object):
         validator = MimeType(mime_type='image/jpeg')
         validator(jpeg_storage_file)
 
+    def test_repr(self):
+        assert repr(MimeType(mime_type='image/png')) == (
+            u"<MimeType mime_type='image/png'>"
+        )
+
 
 class TestFileSizeValidator(object):
     @pytest.fixture
@@ -93,4 +98,9 @@ class TestFileSizeValidator(object):
             FileSize(min=2, max=1)
         assert e.value.message == (
             u'Argument `min` cannot be more than `max`.'
+        )
+
+    def test_repr(self):
+        assert repr(FileSize(min=27660, max=27662)) == (
+            u"<FileSize min=27660, max=27662>"
         )

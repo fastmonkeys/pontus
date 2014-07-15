@@ -95,3 +95,9 @@ class TestAmazonS3FileValidator(object):
         assert not amazon_s3_file_validator.file.name.startswith(
             'test-unvalidated-uploads/'
         )
+
+    def test_repr(self, amazon_s3_file_validator):
+        assert repr(amazon_s3_file_validator) == (
+            "<AmazonS3FileValidator " +
+            "key='test-unvalidated-uploads/images/hello.jpg'>"
+        )

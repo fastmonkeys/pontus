@@ -94,3 +94,9 @@ class AmazonS3FileValidator(object):
         new_file = self.storage.save(name=new_name, content=self.file.read())
         self.storage.delete(self.file.name)
         self.file = new_file
+
+    def __repr__(self):
+        return '<{cls} key={key!r}>'.format(
+            cls=self.__class__.__name__,
+            key=self.key
+        )

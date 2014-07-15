@@ -50,6 +50,12 @@ class MimeType(BaseValidator):
                 )
             )
 
+    def __repr__(self):
+        return '<{cls} mime_type={mime_type!r}>'.format(
+            cls=self.__class__.__name__,
+            mime_type=self.mime_type
+        )
+
 
 class FileSize(BaseValidator):
     """Validator for file size.
@@ -88,3 +94,10 @@ class FileSize(BaseValidator):
             raise ValidationError(u'File is smaller than %s bytes.' % self.min)
         elif self.max != -1 and storage_file.size > self.max:
             raise ValidationError(u'File is bigger than %s bytes.' % self.max)
+
+    def __repr__(self):
+        return '<{cls} min={min!r}, max={max!r}>'.format(
+            cls=self.__class__.__name__,
+            min=self.min,
+            max=self.max
+        )
