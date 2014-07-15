@@ -77,7 +77,7 @@ class AmazonS3FileValidator(object):
         if not self.errors and self._has_unvalidated_prefix():
             self._move_to_validated()
 
-        return len(self.errors) == 0
+        return not self.errors
 
     def _has_unvalidated_prefix(self):
         return (
