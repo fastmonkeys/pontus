@@ -77,7 +77,7 @@ class AmazonS3FileValidator(object):
         if not self.errors and self._has_unvalidated_prefix():
             self._move_to_validated()
 
-        return len(self.errors) == 0
+        return not self.errors
 
     def _has_unvalidated_prefix(self):
         return (
@@ -94,3 +94,9 @@ class AmazonS3FileValidator(object):
         new_file = self.storage.save(name=new_name, content=self.file.read())
         self.storage.delete(self.file.name)
         self.file = new_file
+
+    def __repr__(self):
+        return '<{cls} key={key!r}>'.format(
+            cls=self.__class__.__name__,
+            key=self.key
+        )

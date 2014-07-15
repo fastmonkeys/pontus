@@ -1,0 +1,6 @@
+include *.py
+include *.rst
+include *.yml
+include LICENSE
+recursive-include tests *
+global-exclude *.pyc
