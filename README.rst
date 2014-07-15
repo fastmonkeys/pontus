@@ -1,6 +1,8 @@
 Pontus
 ======
 
+|Build Status|
+
 Flask-Storage utils for:
 
 - signing Amazon S3 POST requests
@@ -109,3 +111,6 @@ Validators can either be instances of a class inheriting
                 raise ValidationError()
 
     name_starts_with_images = NameStartsWith('images/')
+
+
+.. |Build Status| image:: https://circleci.com/gh/fastmonkeys/pontus.png?circle-token=d6d8af8b7529f93824baff06002e819764a77431
