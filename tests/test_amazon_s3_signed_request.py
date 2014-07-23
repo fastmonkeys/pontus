@@ -9,6 +9,7 @@ import freezegun
 import pytest
 
 from pontus import AmazonS3SignedRequest
+from pontus.exceptions import MisconfiguredError
 
 
 HOUR_IN_SECONDS = 60 * 60
@@ -94,3 +95,15 @@ class TestAmazonS3SignedRequest(object):
         assert signed_request.key == (
             'test-unvalidated-uploads/random-string/file_name.png'
         )
+
+    def test_raises_misconfigured_error_if_storage_missing_configs(
+        self,
+        storage
+    ):
+        storage.access_key = None
+        with pytest.raises(MisconfiguredError):
+            AmazonS3SignedRequest(
+                key='file_name.png',
+                mime_type='image/png',
+                storage=storage
+            )

@@ -8,6 +8,8 @@ from hashlib import sha1
 
 from flask import current_app
 
+from .utils import check_configuration_variables
+
 
 class AmazonS3SignedRequest(object):
     """A Flask-Storage utility for creating signatures for
@@ -69,6 +71,8 @@ class AmazonS3SignedRequest(object):
         max_content_length=None,
         randomize=False
     ):
+        check_configuration_variables(storage)
+
         if randomize:
             key = u'%s/%s' % (uuid.uuid4(), key)
 
