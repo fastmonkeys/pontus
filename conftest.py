@@ -1,21 +1,14 @@
 # -*- coding: utf-8 -*-
+import boto
 import pytest
-
 from flask import Flask
-from flask.ext.storage import MockStorage
+from moto import mock_s3
 
 
 @pytest.yield_fixture(scope='session', autouse=True)
 def app(request):
     app = Flask('test')
-    app.config.update(
-        DEFAULT_FILE_STORAGE='amazon',
-        AWS_ACCESS_KEY_ID='test-aws-access-key-id',
-        AWS_SECRET_ACCESS_KEY='test-secret-access-key',
-        AWS_STORAGE_BUCKET_NAME='test-bucket',
-        AWS_UNVALIDATED_PREFIX='test-unvalidated-uploads/',
-        AWS_DEFAULT_ACL='private'
-    )
+    app.config.update(AWS_UNVALIDATED_PREFIX='test-unvalidated-uploads/')
     ctx = app.app_context()
     ctx.push()
 
@@ -24,8 +17,17 @@ def app(request):
     ctx.pop()
 
 
-@pytest.yield_fixture
-def mock_storage():
-    storage = MockStorage()
-    yield storage
-    storage._files = {}
+@pytest.fixture
+def bucket(request):
+    conn = boto.connect_s3(
+        aws_access_key_id='test-key',
+        aws_secret_access_key='test-secret-key'
+    )
+    bucket = conn.create_bucket('test-bucket')
+    return bucket
+
+
+@pytest.yield_fixture(autouse=True)
+def mock_amazon_s3():
+    with mock_s3():
+        yield

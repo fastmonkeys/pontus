@@ -10,3 +10,4 @@ capture.dump
 *.egg-info/
 build/
 dist/
+.tox

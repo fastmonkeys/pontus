@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 import magic
 
+from ._compat import force_text
 from .exceptions import ValidationError
 
 
 class BaseValidator(object):
     """A base class for validators used with :class:`AmazonS3FileValidator`."""
-    def __call__(self, storage_file):
+    def __call__(self, key):
         """
         Validates an Amazon S3 file.
 
-        :param storage_file: Flask-Storage S3BotoStorageFile to be validated.
+        :param key: Flask-Storage S3BotoStorageFile to be validated.
         """
         raise NotImplementedError
 
@@ -35,18 +36,18 @@ class MimeType(BaseValidator):
     def __init__(self, mime_type):
         self.mime_type = mime_type
 
-    def __call__(self, storage_file):
+    def __call__(self, key):
         """
         Check that the file MIME type is :attr:`mime_type`.
 
         :raises ValidationError: if the file MIME type is invalid.
         """
-        file_mime_type = magic.from_buffer(storage_file.read(), mime=True)
+        file_mime_type = force_text(magic.from_buffer(key.read(), mime=True))
         if file_mime_type != self.mime_type:
             raise ValidationError(
-                u"File MIME type is '%s', not '%s'." % (
-                    file_mime_type,
-                    self.mime_type
+                (u"File MIME type is {wrong!s}, not {right!s}.").format(
+                    wrong=file_mime_type,
+                    right=self.mime_type
                 )
             )
 
@@ -84,15 +85,15 @@ class FileSize(BaseValidator):
         self.min = min
         self.max = max
 
-    def __call__(self, storage_file):
+    def __call__(self, key):
         """
         Check that the file size is between :attr:`min` and :attr:`max`.
 
         :raises ValidationError: if the file size is invalid.
         """
-        if storage_file.size < self.min:
+        if key.size < self.min:
             raise ValidationError(u'File is smaller than %s bytes.' % self.min)
-        elif self.max != -1 and storage_file.size > self.max:
+        elif self.max != -1 and key.size > self.max:
             raise ValidationError(u'File is bigger than %s bytes.' % self.max)
 
     def __repr__(self):

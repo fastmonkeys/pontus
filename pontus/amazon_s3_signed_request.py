@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 import base64
-from datetime import datetime, timedelta
 import hmac
 import json
 import uuid
+from datetime import datetime, timedelta
 from hashlib import sha1
 
 from flask import current_app
 
-from .utils import check_configuration_variables
+from ._compat import force_bytes, force_text, unicode_compatible
 
 
+@unicode_compatible
 class AmazonS3SignedRequest(object):
     """A Flask-Storage utility for creating signatures for
     `POST requests to Amazon S3`_.
@@ -32,8 +33,8 @@ class AmazonS3SignedRequest(object):
         )
 
         assert signed_request.form_fields == {
-            'AWSAccessKeyId': 'your-flask-storage-aws-access-key',
-            'acl': 'your-flask-storage-acl',
+            'AWSAccessKeyId': 'your-aws-access-key',
+            'acl': 'public-read',
             'key': 'my/file.jpg',
             'Policy': 'generated-policy-document',
             'success_action_status': '201',
@@ -63,26 +64,26 @@ class AmazonS3SignedRequest(object):
     """
     def __init__(
         self,
-        key,
+        key_name,
         mime_type,
-        storage,
+        bucket,
+        acl='public-read',
         expires_in=60,
         success_action_status='201',
         max_content_length=None,
         randomize=False
     ):
-        check_configuration_variables(storage)
-
         if randomize:
-            key = u'%s/%s' % (uuid.uuid4(), key)
+            key_name = u'%s/%s' % (uuid.uuid4(), key_name)
 
-        key = u'%s%s' % (
+        key_name = u'%s%s' % (
             current_app.config.get('AWS_UNVALIDATED_PREFIX', ''),
-            key
+            key_name
         )
 
         self.expires_in = expires_in
-        self.key = key
+        self.key_name = key_name
+        self.acl = acl
         self.max_content_length = (
             max_content_length or
             current_app.config.get('MAX_CONTENT_LENGTH') or
@@ -90,7 +91,7 @@ class AmazonS3SignedRequest(object):
         )
         self.mime_type = mime_type
         self.randomize = randomize
-        self.storage = storage
+        self.bucket = bucket
         self.success_action_status = success_action_status
 
     @property
@@ -103,9 +104,9 @@ class AmazonS3SignedRequest(object):
         """
         policy = self._get_policy_document()
         return {
-            'AWSAccessKeyId': self.storage.access_key,
-            'acl': self.storage.acl,
-            'key': self.key,
+            'AWSAccessKeyId': self.bucket.connection.aws_access_key_id,
+            'acl': self.acl,
+            'key': self.key_name,
             'Policy': policy,
             'success_action_status': self.success_action_status,
             'Signature': self._get_signature(policy),
@@ -116,29 +117,30 @@ class AmazonS3SignedRequest(object):
         data = {
             'expiration': expiration.isoformat() + 'Z',
             'conditions': [
-                {'bucket': self.storage.bucket_name},
-                {'key': self.key},
-                {'acl': self.storage.acl},
+                {'bucket': self.bucket.name},
+                {'key': self.key_name},
+                {'acl': self.acl},
                 ['starts-with', '$Content-Type', ''],
                 ['content-length-range', 0, self.max_content_length],
                 {'success_action_status': self.success_action_status}
             ]
         }
         data = json.dumps(data)
-        return base64.b64encode(data)
+        return force_text(base64.b64encode(force_bytes(data)))
 
     def _get_signature(self, policy_document):
-        return base64.encodestring(hmac.new(
-            self.storage.secret_key,
-            policy_document,
+        signature = base64.encodestring(hmac.new(
+            force_bytes(self.bucket.connection.aws_secret_access_key),
+            force_bytes(policy_document),
             sha1
         ).digest()).strip()
+        return force_text(signature)
 
     def __repr__(self):
-        return '<{cls} key={key!r}>'.format(
+        return "<{cls} key_name='{key_name!s}'>".format(
             cls=self.__class__.__name__,
-            key=self.key
+            key_name=self.key_name
         )
 
-    def __unicode__(self):
-        return self.key
+    def __str__(self):
+        return self.key_name
