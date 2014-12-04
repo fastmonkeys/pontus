@@ -11,7 +11,7 @@ class BaseValidator(object):
         """
         Validates an Amazon S3 file.
 
-        :param key: Flask-Storage S3BotoStorageFile to be validated.
+        :param key: Boto S3 Key instance to be validated.
         """
         raise NotImplementedError
 

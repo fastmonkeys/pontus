@@ -13,23 +13,27 @@ from ._compat import force_bytes, force_text, unicode_compatible
 
 @unicode_compatible
 class AmazonS3SignedRequest(object):
-    """A Flask-Storage utility for creating signatures for
+    """A Flask utility for creating signatures for
     `POST requests to Amazon S3`_.
 
     .. _POST requests to Amazon S3:
         http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-authentication-HTTPPOST.html
 
-    If the Flask application has an `AWS_UNVALIDATED_PREFIX` config, its value
+    If the application has an `AWS_UNVALIDATED_PREFIX` config, its value
     will be added to the file key.
 
     Example::
 
+        import boto
         from pontus import AmazonS3SignedRequest
 
+        connection = boto.s3.connection.S3Connection()
+        bucket = connection.get_bucket('testbucket')
+
         signed_request = AmazonS3SignedRequest(
-            key=u'my/file.jpg',
+            key_name=u'my/file.jpg',
             mime_type=u'image/jpeg',
-            storage=storage,
+            bucket=bucket,
         )
 
         assert signed_request.form_fields == {
@@ -41,14 +45,17 @@ class AmazonS3SignedRequest(object):
             'Signature': 'generated-signature',
         }
 
-    :param key:
-        The key of the file to be stored in Amazon S3.
+    :param key_name:
+        The key name of the file to be stored in Amazon S3.
 
     :param mime_type:
         The MIME type of the file to be stored in Amazon S3.
 
-    :param storage:
-        The Flask-Storage S3BotoStorage instance to be used.
+    :param bucket:
+        The Boto Bucket instance to be used.
+
+    :param acl:
+        The ACL of the uploaded file, for example 'public-read' or 'private'.
 
     :param expires_in:
         The expiry time of the signature.
@@ -71,7 +78,7 @@ class AmazonS3SignedRequest(object):
         expires_in=60,
         success_action_status='201',
         max_content_length=None,
-        randomize=False
+        randomize=False,
     ):
         if randomize:
             key_name = u'%s/%s' % (uuid.uuid4(), key_name)
