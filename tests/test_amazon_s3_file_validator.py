@@ -1,40 +1,41 @@
 # -*- coding: utf-8 -*-
-from flask.ext.storage import FileNotFoundError
-from flexmock import flexmock
 import pytest
+from boto.s3.key import Key
+from flexmock import flexmock
 
 from pontus import AmazonS3FileValidator
-from pontus.exceptions import ValidationError
+from pontus.exceptions import FileNotFoundError, ValidationError
 from pontus.validators import BaseValidator
-
 
 HOUR_IN_SECONDS = 60 * 60
 
 
 class CustomValidator(BaseValidator):
-    def __call__(self, storage_file):
-        if storage_file.name != 'test-unvalidated-uploads/images/hello.jpg':
+    def __call__(self, key):
+        if key.name != 'test-unvalidated-uploads/images/hello.jpg':
             raise ValidationError('Invalid.')
 
 
 class TestAmazonS3FileValidator(object):
     @pytest.fixture
-    def amazon_s3_file_validator(self, mock_storage):
-        key = 'test-unvalidated-uploads/images/hello.jpg'
-        mock_storage.save(name=key, content='test')
+    def amazon_s3_file_validator(self, bucket):
+        key_name = 'test-unvalidated-uploads/images/hello.jpg'
+        key = Key(bucket=bucket, name=key_name)
+        key.set_contents_from_string('test')
         return AmazonS3FileValidator(
-            key=key,
-            storage=mock_storage,
+            key_name=key_name,
+            bucket=bucket,
             validators=[CustomValidator()]
         )
 
     @pytest.fixture
-    def failing_amazon_s3_file_validator(self, mock_storage):
-        key = 'images/fail.jpg'
-        mock_storage.save(name=key, content='test')
+    def failing_amazon_s3_file_validator(self, bucket):
+        key_name = 'images/fail.jpg'
+        key = Key(bucket=bucket, name=key_name)
+        key.set_contents_from_string('test')
         return AmazonS3FileValidator(
-            key=key,
-            storage=mock_storage,
+            key_name=key,
+            bucket=bucket,
             validators=[CustomValidator()]
         )
 
@@ -42,7 +43,7 @@ class TestAmazonS3FileValidator(object):
         (
             flexmock(CustomValidator)
             .should_receive('__call__')
-            .with_args(amazon_s3_file_validator.file)
+            .with_args(amazon_s3_file_validator.key)
             .and_return(True)
         )
         amazon_s3_file_validator.validate()
@@ -74,25 +75,25 @@ class TestAmazonS3FileValidator(object):
 
     def test_throws_error_if_file_not_found(
         self,
-        mock_storage
+        bucket
     ):
         with pytest.raises(FileNotFoundError):
             AmazonS3FileValidator(
-                key='does_not_exist.jpg',
-                storage=mock_storage
+                key_name='does_not_exist.jpg',
+                bucket=bucket
             )
 
     def test_validate_removes_unvalidated_prefix_if_validation_passes(
         self,
         amazon_s3_file_validator,
-        mock_storage
+        bucket
     ):
         amazon_s3_file_validator.validate()
-        assert not mock_storage.exists(
+        assert bucket.get_key(
             'test-unvalidated-uploads/images/hello.jpg'
-        )
-        assert mock_storage.exists('images/hello.jpg')
-        assert not amazon_s3_file_validator.file.name.startswith(
+        ) is None
+        assert bucket.get_key('images/hello.jpg')
+        assert not amazon_s3_file_validator.key.name.startswith(
             'test-unvalidated-uploads/'
         )
 

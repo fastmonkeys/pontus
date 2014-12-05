@@ -2,45 +2,41 @@
 import base64
 import json
 
-from flask import current_app
-from flask.ext.storage import get_default_storage_class
-from flexmock import flexmock
 import freezegun
 import pytest
+from flexmock import flexmock
 
 from pontus import AmazonS3SignedRequest
-from pontus.exceptions import MisconfiguredError
-
+from pontus._compat import force_text
 
 HOUR_IN_SECONDS = 60 * 60
 
 
 class TestAmazonS3SignedRequest(object):
     @pytest.fixture
-    def storage(self):
-        return get_default_storage_class(current_app)()
-
-    @pytest.fixture
-    def signed_request(self, storage):
+    def signed_request(self, bucket):
         return AmazonS3SignedRequest(
-            key='file_name.png',
+            key_name='file_name.png',
             mime_type='image/png',
-            storage=storage,
+            bucket=bucket,
+            acl='private',
             expires_in=HOUR_IN_SECONDS
         )
 
     def test_key(self, signed_request):
-        assert signed_request.key == 'test-unvalidated-uploads/file_name.png'
+        assert signed_request.key_name == (
+            'test-unvalidated-uploads/file_name.png'
+        )
 
     def test_get_signature(self, signed_request):
         signature = signed_request._get_signature('some policy')
-        assert signature == 'tQ3+Ydxq/dq4mGy8X65ApZDHXy4='
+        assert signature == '+kyVfzakuUYOwB4mwo2CuG5GiGI='
 
     def test_get_policy_document(self, signed_request):
         with freezegun.freeze_time('2007-12-01 12:05:37.572123'):
             policy = signed_request._get_policy_document()
         data_as_json = base64.b64decode(policy)
-        data = json.loads(data_as_json)
+        data = json.loads(force_text(data_as_json))
         assert data == {
             'expiration': '2007-12-01T13:05:37.572123Z',
             'conditions': [
@@ -65,7 +61,7 @@ class TestAmazonS3SignedRequest(object):
             .and_return(u'signature')
         )
         assert signed_request.form_fields == {
-            'AWSAccessKeyId': 'test-aws-access-key-id',
+            'AWSAccessKeyId': 'test-key',
             'acl': 'private',
             'key': 'test-unvalidated-uploads/file_name.png',
             'Policy': 'policy',
@@ -76,10 +72,10 @@ class TestAmazonS3SignedRequest(object):
     def test_repr(self, signed_request):
         assert repr(signed_request) == (
             u"<AmazonS3SignedRequest " +
-            u"key=u'test-unvalidated-uploads/file_name.png'>"
+            u"key_name='test-unvalidated-uploads/file_name.png'>"
         )
 
-    def test_randomized_key(self, storage):
+    def test_randomized_key(self, bucket):
         import uuid
         (
             flexmock(uuid)
@@ -87,23 +83,11 @@ class TestAmazonS3SignedRequest(object):
             .and_return(u'random-string')
         )
         signed_request = AmazonS3SignedRequest(
-            key='file_name.png',
+            key_name='file_name.png',
             mime_type='image/png',
             randomize=True,
-            storage=storage
+            bucket=bucket
         )
-        assert signed_request.key == (
+        assert signed_request.key_name == (
             'test-unvalidated-uploads/random-string/file_name.png'
         )
-
-    def test_raises_misconfigured_error_if_storage_missing_configs(
-        self,
-        storage
-    ):
-        storage.access_key = None
-        with pytest.raises(MisconfiguredError):
-            AmazonS3SignedRequest(
-                key='file_name.png',
-                mime_type='image/png',
-                storage=storage
-            )

@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 from flask import current_app
-from flask.ext.storage import FileNotFoundError
 
-from .exceptions import ValidationError
+from .exceptions import FileNotFoundError, ValidationError
 
 
 class AmazonS3FileValidator(object):
-    """A Flask-Storage utility for validating files stored in AmazonS3.
+    """A Flask utility for validating files stored in AmazonS3.
 
-    If the Flask application has an `AWS_UNVALIDATED_PREFIX` config, its value
+    If the application has an `AWS_UNVALIDATED_PREFIX` config, its value
     will be removed from the file key if the file is valid. This enables
     deleting unvalidated files via `Amazon S3 Lifecycle Management`_.
 
@@ -17,14 +16,18 @@ class AmazonS3FileValidator(object):
 
     Example::
 
-        from flask.ext.storage import FileNotFoundError
+        import boto
         from pontus import AmazonS3FileValidator
+        from pontus.exceptions import FileNotFoundError
         from pontus.validators import MimeType
+
+        connection = boto.s3.connection.S3Connection()
+        bucket = connection.get_bucket('testbucket')
 
         try:
             validator = AmazonS3FileValidator(
-                key='my/file.jpg',
-                storage=storage,
+                key_name='my/file.jpg',
+                bucket=bucket,
                 validators=[MimeType('image/jpeg')]
             )
         except FileNotFoundError:
@@ -38,25 +41,24 @@ class AmazonS3FileValidator(object):
             # File was invalid, printing errors
             print validator.errors
 
-    :param key:
+    :param key_name:
         The key of the file stored in Amazon S3.
 
-    :param storage:
-        The Flask-Storage S3BotoStorage instance to be used.
+    :param bucket:
+        The Boto S3 Bucket instance.
 
     :param validators:
         List of validators. A validator can either be an instance of a class
         inheriting :class:`BaseValidator` or a callable
-        function that takes `storage_file` as a parameter.
+        function that takes Boto S3 Key instance as a parameter.
 
     """
-    def __init__(self, key, storage, validators=[]):
+    def __init__(self, key_name, bucket, validators=[]):
         self.errors = []
-        self.file = storage.open(key)
-        if not storage.exists(key):
-            raise FileNotFoundError()
-        self.key = key
-        self.storage = storage
+        self.key = bucket.get_key(key_name)
+        if not self.key:
+            raise FileNotFoundError(key=key_name)
+        self.bucket = bucket
         self.validators = validators
 
     def validate(self):
@@ -70,7 +72,7 @@ class AmazonS3FileValidator(object):
         """
         for validator in self.validators:
             try:
-                validator(self.file)
+                validator(self.key)
             except ValidationError as e:
                 self.errors.append(e.error)
 
@@ -82,21 +84,26 @@ class AmazonS3FileValidator(object):
     def _has_unvalidated_prefix(self):
         return (
             current_app.config.get('AWS_UNVALIDATED_PREFIX') and
-            self.file.name.startswith(
+            self.key.name.startswith(
                 current_app.config.get('AWS_UNVALIDATED_PREFIX')
             )
         )
 
     def _move_to_validated(self):
-        new_name = self.file.name[
+        new_name = self.key.name[
             len(current_app.config.get('AWS_UNVALIDATED_PREFIX')):
         ]
-        new_file = self.storage.save(name=new_name, content=self.file.read())
-        self.storage.delete(self.file.name)
-        self.file = new_file
+        new_key = self.key.copy(
+            dst_bucket=self.bucket.name,
+            dst_key=new_name,
+            metadata=None,
+            preserve_acl=True
+        )
+        self.key.delete()
+        self.key = new_key
 
     def __repr__(self):
         return '<{cls} key={key!r}>'.format(
             cls=self.__class__.__name__,
-            key=self.key
+            key=self.key.name
         )

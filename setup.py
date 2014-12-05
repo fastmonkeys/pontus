@@ -2,13 +2,15 @@
 Pontus
 ------
 
-Flask-Storage utils for Amazon S3.
+Flask utility for signing Amazon S3 POST requests and validating Amazon S3
+files.
 """
 
-from setuptools import setup, Command
 import os
 import re
 import subprocess
+
+from setuptools import Command, setup
 
 
 def get_version():
@@ -42,6 +44,7 @@ extras_require = {
         'freezegun>=0.1.18',
         'py>=1.4.20',
         'pytest>=2.5.2',
+        'moto>=0.3.9'
     ]
 }
 
@@ -52,17 +55,16 @@ setup(
     url='https://github.com/fastmonkeys/pontus',
     author='Vesa Uimonen',
     author_email='vesa@fastmonkeys.com',
-    description='Flask-Storage utils for Amazon S3.',
+    description='Flask utility for Amazon S3.',
     license='MIT',
     packages=['pontus'],
     zip_safe=False,
     include_package_data=True,
     platforms='any',
-    dependency_links=['git+https://github.com/kvesteri/flask-storage.git#egg=Flask_Storage-0.1.3dev'],
     install_requires=[
         'Flask>=0.10.1',
-        'Flask-Storage>=0.1.3dev',
         'python-magic>=0.4.6',
+        'boto>=2.34.0'
     ],
     extras_require=extras_require,
     cmdclass={'test': PyTest},
