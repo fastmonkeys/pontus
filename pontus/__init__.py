@@ -10,4 +10,4 @@
 from .amazon_s3_file_validator import AmazonS3FileValidator  # noqa
 from .amazon_s3_signed_request import AmazonS3SignedRequest  # noqa
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
