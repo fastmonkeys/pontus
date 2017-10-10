@@ -62,6 +62,7 @@ Creating form fields for a signed Amazon S3 POST request
     #     'AWSAccessKeyId': 'your-aws-access-key-id',
     #     'success_action_status': '201',
     #     'acl': 'public-read',
+    #     'Content-Type': 'image/png',
     #     'key': u'f6c157e1-1a1a-4418-99fe-3362dcf7b1ea/images/my-image.jpg',
     #     'Signature': 'generated-signature',
     #     'Policy': 'generated-policy-document'
