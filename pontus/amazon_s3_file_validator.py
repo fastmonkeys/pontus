@@ -55,7 +55,7 @@ class AmazonS3FileValidator(object):
     """
     def __init__(self, key_name, bucket, validators=[]):
         self.errors = []
-        self.key = bucket.get_key(key_name)
+        self.key = bucket.Object(key_name)
         if not self.key:
             raise FileNotFoundError(key=key_name)
         self.bucket = bucket
@@ -84,21 +84,21 @@ class AmazonS3FileValidator(object):
     def _has_unvalidated_prefix(self):
         return (
             current_app.config.get('AWS_UNVALIDATED_PREFIX') and
-            self.key.name.startswith(
+            self.key.key.startswith(
                 current_app.config.get('AWS_UNVALIDATED_PREFIX')
             )
         )
 
     def _move_to_validated(self):
-        new_name = self.key.name[
+        new_name = self.key.key[
             len(current_app.config.get('AWS_UNVALIDATED_PREFIX')):
         ]
-        new_key = self.key.copy(
-            dst_bucket=self.bucket.name,
-            dst_key=new_name,
-            metadata=None,
-            preserve_acl=True
-        )
+        new_key = self.bucket.Object(new_name)
+        new_key.copy({
+            'Bucket': self.bucket.name,
+            'Key': self.key.key
+        })
+        new_key.Acl().put(ACL='public-read')
         self.key.delete()
         self.key = new_key
 
