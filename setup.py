@@ -45,7 +45,6 @@ extras_require = {
         'py>=1.4.20',
         'pytest>=2.5.2',
         'moto>=0.3.9',
-        'httpretty==0.8.6'
     ]
 }
 
@@ -65,7 +64,7 @@ setup(
     install_requires=[
         'Flask>=0.10.1',
         'python-magic>=0.4.6',
-        'boto>=2.34.0'
+        'boto3>=1.4.7'
     ],
     extras_require=extras_require,
     cmdclass={'test': PyTest},

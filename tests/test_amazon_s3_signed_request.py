@@ -2,6 +2,7 @@
 import base64
 import json
 
+import boto3
 import freezegun
 import pytest
 from flexmock import flexmock
@@ -20,7 +21,11 @@ class TestAmazonS3SignedRequest(object):
             mime_type='image/png',
             bucket=bucket,
             acl='private',
-            expires_in=HOUR_IN_SECONDS
+            expires_in=HOUR_IN_SECONDS,
+            session=boto3.session.Session(
+                aws_access_key_id='test-key',
+                aws_secret_access_key='test-secret-key'
+            )
         )
 
     def test_key(self, signed_request):
@@ -86,7 +91,8 @@ class TestAmazonS3SignedRequest(object):
             key_name='file_name.png',
             mime_type='image/png',
             randomize=True,
-            bucket=bucket
+            bucket=bucket,
+            session=boto3.session.Session()
         )
         assert signed_request.key_name == (
             'test-unvalidated-uploads/random-string/file_name.png'

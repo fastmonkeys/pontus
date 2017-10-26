@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import boto
+import boto3
 import pytest
 from flask import Flask
 from moto import mock_s3
@@ -19,12 +19,8 @@ def app(request):
 
 @pytest.fixture
 def bucket(request):
-    conn = boto.connect_s3(
-        aws_access_key_id='test-key',
-        aws_secret_access_key='test-secret-key'
-    )
-    bucket = conn.create_bucket('test-bucket')
-    return bucket
+    boto3.resource('s3').create_bucket(Bucket='test-bucket')
+    return boto3.resource('s3').Bucket('test-bucket')
 
 
 @pytest.yield_fixture(autouse=True)

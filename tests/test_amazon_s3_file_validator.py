@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
-from boto.s3.key import Key
+import botocore
+import boto3
 from flexmock import flexmock
 
 from pontus import AmazonS3FileValidator
@@ -11,8 +12,8 @@ HOUR_IN_SECONDS = 60 * 60
 
 
 class CustomValidator(BaseValidator):
-    def __call__(self, key):
-        if key.name != 'test-unvalidated-uploads/images/hello.jpg':
+    def __call__(self, obj):
+        if obj.key != 'test-unvalidated-uploads/images/hello.jpg':
             raise ValidationError('Invalid.')
 
 
@@ -20,8 +21,7 @@ class TestAmazonS3FileValidator(object):
     @pytest.fixture
     def amazon_s3_file_validator(self, bucket):
         key_name = 'test-unvalidated-uploads/images/hello.jpg'
-        key = Key(bucket=bucket, name=key_name)
-        key.set_contents_from_string('test')
+        boto3.resource('s3').Object(bucket.name, key_name).put(Body='test')
         return AmazonS3FileValidator(
             key_name=key_name,
             bucket=bucket,
@@ -31,10 +31,9 @@ class TestAmazonS3FileValidator(object):
     @pytest.fixture
     def failing_amazon_s3_file_validator(self, bucket):
         key_name = 'images/fail.jpg'
-        key = Key(bucket=bucket, name=key_name)
-        key.set_contents_from_string('test')
+        boto3.resource('s3').Object(bucket.name, key_name).put(Body='test')
         return AmazonS3FileValidator(
-            key_name=key,
+            key_name=key_name,
             bucket=bucket,
             validators=[CustomValidator()]
         )
@@ -43,7 +42,7 @@ class TestAmazonS3FileValidator(object):
         (
             flexmock(CustomValidator)
             .should_receive('__call__')
-            .with_args(amazon_s3_file_validator.key)
+            .with_args(amazon_s3_file_validator.obj)
             .and_return(True)
         )
         amazon_s3_file_validator.validate()
@@ -89,11 +88,16 @@ class TestAmazonS3FileValidator(object):
         bucket
     ):
         amazon_s3_file_validator.validate()
-        assert bucket.get_key(
-            'test-unvalidated-uploads/images/hello.jpg'
-        ) is None
-        assert bucket.get_key('images/hello.jpg')
-        assert not amazon_s3_file_validator.key.name.startswith(
+
+        with pytest.raises(botocore.exceptions.ClientError):
+            boto3.resource('s3').Object(
+              bucket.name, 'test-unvalidated-uploads/images/hello.jpg'
+            ).get()
+
+        assert boto3.resource('s3').Object(
+              bucket.name, 'images/hello.jpg'
+        ).get()
+        assert not amazon_s3_file_validator.obj.key.startswith(
             'test-unvalidated-uploads/'
         )
 

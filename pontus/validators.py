@@ -8,11 +8,11 @@ from .exceptions import ValidationError
 
 class BaseValidator(object):
     """A base class for validators used with :class:`AmazonS3FileValidator`."""
-    def __call__(self, key):
+    def __call__(self, obj):
         """
         Validates an Amazon S3 file.
 
-        :param key: Boto S3 Key instance to be validated.
+        :param obj: Boto S3 Object instance to be validated.
         """
         raise NotImplementedError
 
@@ -50,13 +50,15 @@ class MimeType(BaseValidator):
         self.mime_types = mime_type or mime_types
         self.regex = regex
 
-    def __call__(self, key):
+    def __call__(self, obj):
         """
         Check file MIME type is in :attr:`mime_types` or matches :attr:`regex`.
 
         :raises ValidationError: if the file MIME type is invalid.
         """
-        file_mime_type = force_text(magic.from_buffer(key.read(), mime=True))
+        file_mime_type = force_text(magic.from_buffer(
+            obj.get()['Body'].read(), mime=True
+        ))
 
         if self.regex and not re.search(self.regex, file_mime_type):
             raise ValidationError(
@@ -120,13 +122,15 @@ class DenyMimeType(BaseValidator):
         self.mime_types = mime_type or mime_types
         self.regex = regex
 
-    def __call__(self, key):
+    def __call__(self, obj):
         """
         Check MIME type is not in :attr:`mime_types` or matches :attr:`regex`.
 
         :raises ValidationError: if the file MIME type is invalid.
         """
-        file_mime_type = force_text(magic.from_buffer(key.read(), mime=True))
+        file_mime_type = force_text(magic.from_buffer(
+            obj.get()['Body'].read(), mime=True
+        ))
 
         if self.regex and re.search(self.regex, file_mime_type):
             raise ValidationError(
@@ -186,15 +190,15 @@ class FileSize(BaseValidator):
         self.min = min
         self.max = max
 
-    def __call__(self, key):
+    def __call__(self, obj):
         """
         Check that the file size is between :attr:`min` and :attr:`max`.
 
         :raises ValidationError: if the file size is invalid.
         """
-        if key.size < self.min:
+        if obj.content_length < self.min:
             raise ValidationError(u'File is smaller than %s bytes.' % self.min)
-        elif self.max != -1 and key.size > self.max:
+        elif self.max != -1 and obj.content_length > self.max:
             raise ValidationError(u'File is bigger than %s bytes.' % self.max)
 
     def __repr__(self):

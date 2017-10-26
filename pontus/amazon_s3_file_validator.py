@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import botocore
 from flask import current_app
 
 from .exceptions import FileNotFoundError, ValidationError
@@ -50,14 +51,19 @@ class AmazonS3FileValidator(object):
     :param validators:
         List of validators. A validator can either be an instance of a class
         inheriting :class:`BaseValidator` or a callable
-        function that takes Boto S3 Key instance as a parameter.
+        function that takes Boto S3 Object instance as a parameter.
 
     """
     def __init__(self, key_name, bucket, validators=[]):
         self.errors = []
-        self.key = bucket.get_key(key_name)
-        if not self.key:
-            raise FileNotFoundError(key=key_name)
+        self.obj = bucket.Object(key_name)
+        try:
+            self.obj.load()
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                raise FileNotFoundError(key=key_name)
+            else:
+                raise e
         self.bucket = bucket
         self.validators = validators
 
@@ -72,7 +78,7 @@ class AmazonS3FileValidator(object):
         """
         for validator in self.validators:
             try:
-                validator(self.key)
+                validator(self.obj)
             except ValidationError as e:
                 self.errors.append(e.error)
 
@@ -84,26 +90,26 @@ class AmazonS3FileValidator(object):
     def _has_unvalidated_prefix(self):
         return (
             current_app.config.get('AWS_UNVALIDATED_PREFIX') and
-            self.key.name.startswith(
+            self.obj.key.startswith(
                 current_app.config.get('AWS_UNVALIDATED_PREFIX')
             )
         )
 
     def _move_to_validated(self):
-        new_name = self.key.name[
+        new_name = self.obj.key[
             len(current_app.config.get('AWS_UNVALIDATED_PREFIX')):
         ]
-        new_key = self.key.copy(
-            dst_bucket=self.bucket.name,
-            dst_key=new_name,
-            metadata=None,
-            preserve_acl=True
-        )
-        self.key.delete()
-        self.key = new_key
+        new_obj = self.bucket.Object(new_name)
+        new_obj.copy({
+            'Bucket': self.bucket.name,
+            'Key': self.obj.key
+        })
+        new_obj.Acl().put(ACL='public-read')
+        self.obj.delete()
+        self.obj = new_obj
 
     def __repr__(self):
         return '<{cls} key={key!r}>'.format(
             cls=self.__class__.__name__,
-            key=self.key.name
+            key=self.obj.key
         )
