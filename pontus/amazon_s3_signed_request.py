@@ -102,7 +102,6 @@ class AmazonS3SignedRequest(object):
         self.randomize = randomize
         self.bucket = bucket
         self.session = session
-        self.aws_access_key_id = aws_access_key_id
         self.success_action_status = success_action_status
 
     @property
