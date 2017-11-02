@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import botocore
 from flask import current_app
 
 from .exceptions import FileNotFoundError, ValidationError
@@ -56,8 +57,13 @@ class AmazonS3FileValidator(object):
     def __init__(self, key_name, bucket, validators=[]):
         self.errors = []
         self.key = bucket.Object(key_name)
-        if not self.key:
-            raise FileNotFoundError(key=key_name)
+        try:
+            self.key.load()
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == '404':
+                raise FileNotFoundError(key=key_name)
+            else:
+                raise e
         self.bucket = bucket
         self.validators = validators
 
