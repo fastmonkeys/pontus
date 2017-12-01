@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 
+import boto3
 import pytest
-from boto.s3.key import Key
 
 from pontus.exceptions import ValidationError
 from pontus.validators import MimeType
@@ -17,9 +17,11 @@ class TestMimeTypeValidator(object):
             'example.jpg'
         ), 'rb') as image:
             key_name = 'example.jpg'
-            key = Key(bucket=bucket, name=key_name)
-            key.set_contents_from_file(image)
-            return key
+            obj = boto3.resource('s3').Object(bucket.name, key_name)
+            obj.put(
+                Body=image
+            )
+            return obj
 
     def test_raises_validation_error_if_invalid_mime_type(
         self,

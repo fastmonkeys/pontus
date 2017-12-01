@@ -6,6 +6,8 @@ Pontus
 Flask utility for signing Amazon S3 POST requests and validating Amazon S3
 files. Both Python 2.7 and 3.4 are supported.
 
+**Upgrade note: Pontus 1.x branch uses Boto3. If you are still using boto, use
+0.x.x versions. Check Git branch `version-0`.**
 
 Installation
 ------------
@@ -21,7 +23,7 @@ Dependencies
 Pontus has the following dependencies:
 
 - Flask >= 0.10.1
-- boto >= 2.34.0
+- boto3 >= 1.4.7
 - python-magic >= 0.4.6 (https://github.com/ahupp/python-magic)
 
 Moreover python-magic depends on the libmagic file type identification library.
@@ -37,20 +39,21 @@ Creating form fields for a signed Amazon S3 POST request
 
 .. code:: python
 
-    import boto
+    import boto3
     from flask import current_app
     from pontus import AmazonS3SignedRequest
 
-    connection = boto.s3.connection.S3Connection(
+    session = boto3.session.Session(
         aws_access_key_id=current_app.config.get('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=current_app.config.get('AWS_SECRET_ACCESS_KEY')
     )
-    bucket = connection.get_bucket('testbucket')
+    bucket = session.resource('s3').Bucket('testbucket')
 
     signed_request = AmazonS3SignedRequest(
         key_name=u'my/file.jpg',
         mime_type=u'image/jpeg',
         bucket=bucket,
+        session=session
     )
 
     signed_request.form_fields
@@ -80,21 +83,22 @@ MIME type.
 
 .. code:: python
 
-    import boto
+    import boto3
     from flask import current_app
     from pontus import AmazonS3FileValidator
     from pontus.validators import FileSize, MimeType
 
-    connection = boto.s3.connection.S3Connection(
+    session = boto3.session.Session(
         aws_access_key_id=current_app.config.get('AWS_ACCESS_KEY_ID'),
         aws_secret_access_key=current_app.config.get('AWS_SECRET_ACCESS_KEY')
     )
-    bucket = connection.get_bucket('testbucket')
+    bucket = session.resource('s3').Bucket('testbucket')
 
     validator = AmazonS3FileValidator(
         key_name='images/my-image.jpg',
         bucket=bucket,
-        validators=[FileSize(max=2097152), MimeType('image/jpeg')]
+        validators=[FileSize(max=2097152), MimeType('image/jpeg')],
+        session=session
     )
 
     if validator.validate():
@@ -107,15 +111,15 @@ MIME type.
 
 Validators can either be instances of a class inheriting
 :code:`pontus.validators.BaseValidator` or callable functions that take one
-parameter :code:`key`, which is a `boto.s3.key.Key`_ instance.
+parameter :code:`obj`, which is a `boto.S3.Object`_ instance.
 
 .. code:: python
 
     from pontus.exceptions import ValidationError
     from pontus.validators import BaseValidator
 
-    def name_starts_with_images(key):
-        if not key.name.startswith('images/'):
+    def name_starts_with_images(obj):
+        if not obj.key.startswith('images/'):
             raise ValidationError()
 
     # OR
@@ -124,14 +128,14 @@ parameter :code:`key`, which is a `boto.s3.key.Key`_ instance.
         def __init__(self, starts_with_str):
             self.starts_with_str = starts_with_str
 
-        def __call__(self, key):
-            if not key.name.startswith(starts_with_str):
+        def __call__(self, obj):
+            if not obj.key.startswith(starts_with_str):
                 raise ValidationError()
 
     name_starts_with_images = NameStartsWith('images/')
 
 
-.. _boto.s3.key.Key:
-    http://boto.readthedocs.org/en/latest/ref/s3.html#module-boto.s3.key
+.. _boto.S3.Object:
+    http://boto3.readthedocs.io/en/latest/reference/services/s3.html#S3.Object
 
 .. |Build Status| image:: https://circleci.com/gh/fastmonkeys/pontus.png?circle-token=d6d8af8b7529f93824baff06002e819764a77431

@@ -74,6 +74,7 @@ class AmazonS3SignedRequest(object):
         key_name,
         mime_type,
         bucket,
+        session,
         acl='public-read',
         expires_in=60,
         success_action_status='201',
@@ -99,6 +100,7 @@ class AmazonS3SignedRequest(object):
         self.mime_type = mime_type
         self.randomize = randomize
         self.bucket = bucket
+        self.session = session
         self.success_action_status = success_action_status
 
     @property
@@ -111,7 +113,7 @@ class AmazonS3SignedRequest(object):
         """
         policy = self._get_policy_document()
         return {
-            'AWSAccessKeyId': self.bucket.connection.aws_access_key_id,
+            'AWSAccessKeyId': self.session.get_credentials().access_key,
             'acl': self.acl,
             'key': self.key_name,
             'Policy': policy,
@@ -137,7 +139,7 @@ class AmazonS3SignedRequest(object):
 
     def _get_signature(self, policy_document):
         signature = base64.encodestring(hmac.new(
-            force_bytes(self.bucket.connection.aws_secret_access_key),
+            force_bytes(self.session.get_credentials().secret_key),
             force_bytes(policy_document),
             sha1
         ).digest()).strip()
