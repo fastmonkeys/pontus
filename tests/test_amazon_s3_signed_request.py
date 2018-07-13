@@ -48,7 +48,7 @@ class TestAmazonS3SignedRequest(object):
                 {'bucket': 'test-bucket'},
                 {'key': 'test-unvalidated-uploads/file_name.png'},
                 {'acl': 'private'},
-                ['starts-with', '$Content-Type', ''],
+                {'Content-Type': 'image/png'},
                 ['content-length-range', 0, 20971520],
                 {'success_action_status': '201'},
             ]
@@ -68,6 +68,7 @@ class TestAmazonS3SignedRequest(object):
         assert signed_request.form_fields == {
             'AWSAccessKeyId': 'test-key',
             'acl': 'private',
+            'Content-Type': 'image/png',
             'key': 'test-unvalidated-uploads/file_name.png',
             'Policy': 'policy',
             'success_action_status': '201',

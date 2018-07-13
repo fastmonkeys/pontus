@@ -1,6 +1,17 @@
 Changelog
 ---------
 
+2.0.0 (July 11th, 2018)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Add Content-Type validation to AmazonS3SignedRequest.
+
+1.0.0 (December 5th, 2017)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Switch to boto3.
+- Drop support for boto.
+
 0.2.1 (March 5th, 2015)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 

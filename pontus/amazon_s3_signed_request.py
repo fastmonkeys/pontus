@@ -39,6 +39,7 @@ class AmazonS3SignedRequest(object):
         assert signed_request.form_fields == {
             'AWSAccessKeyId': 'your-aws-access-key',
             'acl': 'public-read',
+            'Content-Type': 'image/png',
             'key': 'my/file.jpg',
             'Policy': 'generated-policy-document',
             'success_action_status': '201',
@@ -115,6 +116,7 @@ class AmazonS3SignedRequest(object):
         return {
             'AWSAccessKeyId': self.session.get_credentials().access_key,
             'acl': self.acl,
+            'Content-Type': self.mime_type,
             'key': self.key_name,
             'Policy': policy,
             'success_action_status': self.success_action_status,
@@ -129,7 +131,7 @@ class AmazonS3SignedRequest(object):
                 {'bucket': self.bucket.name},
                 {'key': self.key_name},
                 {'acl': self.acl},
-                ['starts-with', '$Content-Type', ''],
+                {'Content-Type': self.mime_type},
                 ['content-length-range', 0, self.max_content_length],
                 {'success_action_status': self.success_action_status}
             ]
