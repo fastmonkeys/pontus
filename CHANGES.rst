@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+2.0.1 (July 13th, 2018)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Use universal wheel.
+- Include license in wheel.
+
+
 2.0.0 (July 11th, 2018)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
