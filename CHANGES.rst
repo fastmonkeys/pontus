@@ -1,7 +1,7 @@
 Changelog
 ---------
 
-2.0.1 (July 13th, 2018)
+2.0.1 (July 26th, 2018)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 - Use universal wheel.
