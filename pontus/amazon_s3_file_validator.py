@@ -53,8 +53,11 @@ class AmazonS3FileValidator(object):
         inheriting :class:`BaseValidator` or a callable
         function that takes Boto S3 Object instance as a parameter.
 
+    :param delete_unvalidated_file:
+        Whether to delete the unvalidated file when the new file is copied to new location
+
     """
-    def __init__(self, key_name, bucket, validators=[]):
+    def __init__(self, key_name, bucket, validators=[], delete_unvalidated_file=True):
         self.errors = []
         self.obj = bucket.Object(key_name)
         try:
@@ -66,6 +69,7 @@ class AmazonS3FileValidator(object):
                 raise e
         self.bucket = bucket
         self.validators = validators
+        self.delete_unvalidated_file = delete_unvalidated_file
 
     def validate(self):
         """
@@ -105,7 +109,8 @@ class AmazonS3FileValidator(object):
             'Key': self.obj.key
         })
         new_obj.Acl().put(ACL='public-read')
-        self.obj.delete()
+        if self.delete_unvalidated_file:
+            self.obj.delete()
         self.obj = new_obj
 
     def __repr__(self):
