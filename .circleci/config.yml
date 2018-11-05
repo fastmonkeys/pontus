@@ -5,6 +5,8 @@ jobs:
     working_directory: ~/pontus
     environment:
       BASH_ENV: ~/.bashrc
+      AWS_ACCESS_KEY_ID: foobar_key
+      AWS_SECRET_ACCESS_KEY: foobar_secret
     docker:
       - image: python:3.4.7
         environment:
