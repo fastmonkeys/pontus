@@ -29,6 +29,26 @@ class TestAmazonS3FileValidator(object):
         )
 
     @pytest.fixture
+    def amazon_s3_file_validator_no_delete(self, bucket):
+        key_name = 'test-unvalidated-uploads/images/hello.jpg'
+        boto3.resource('s3').Object(bucket.name, key_name).put(Body='test')
+        return AmazonS3FileValidator(
+            key_name=key_name,
+            bucket=bucket,
+            delete_unvalidated_file=False
+        )
+
+    @pytest.fixture
+    def amazon_s3_file_validator_with_prefix(self, bucket):
+        key_name = 'test-unvalidated-uploads/hello.jpg'
+        boto3.resource('s3').Object(bucket.name, key_name).put(Body='test')
+        return AmazonS3FileValidator(
+            key_name=key_name,
+            bucket=bucket,
+            new_file_prefix='validated-uploads/'
+        )
+
+    @pytest.fixture
     def failing_amazon_s3_file_validator(self, bucket):
         key_name = 'images/fail.jpg'
         boto3.resource('s3').Object(bucket.name, key_name).put(Body='test')
@@ -100,6 +120,35 @@ class TestAmazonS3FileValidator(object):
         assert not amazon_s3_file_validator.obj.key.startswith(
             'test-unvalidated-uploads/'
         )
+
+    def test_validate_doesnt_remove_unvalidated_prefix_file(
+        self,
+        amazon_s3_file_validator_no_delete,
+        bucket
+    ):
+        amazon_s3_file_validator_no_delete.validate()
+
+        boto3.resource('s3').Object(
+          bucket.name, 'test-unvalidated-uploads/images/hello.jpg'
+        ).get()
+
+        assert boto3.resource('s3').Object(
+              bucket.name, 'images/hello.jpg'
+        ).get()
+
+    def test_validate_uses_new_file_prefix(
+        self,
+        amazon_s3_file_validator_with_prefix,
+        bucket
+    ):
+        amazon_s3_file_validator_with_prefix.validate()
+
+        assert amazon_s3_file_validator_with_prefix.obj.key == (
+            'validated-uploads/hello.jpg'
+        )
+        assert boto3.resource('s3').Object(
+              bucket.name, 'validated-uploads/hello.jpg'
+        ).get()
 
     def test_repr(self, amazon_s3_file_validator):
         assert repr(amazon_s3_file_validator) == (
