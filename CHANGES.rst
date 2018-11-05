@@ -1,6 +1,13 @@
 Changelog
 ---------
 
+2.1.0 (November 5th, 2018)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Add new_file_prefix argument to AmazonS3FileValidator.
+- Add delete_unvalidated_file armgument to AmazonS3FileValidator.
+
+
 2.0.1 (July 26th, 2018)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
