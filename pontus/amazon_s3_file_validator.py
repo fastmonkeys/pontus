@@ -59,6 +59,10 @@ class AmazonS3FileValidator(object):
     :param new_file_prefix:
         Prefix to be set to the new file that is copied during validation.
 
+    :param new_file_acl:
+        Canned ACL set to the new file that is copied during validation.
+        Defaults to 'public-read'.
+
     """
     def __init__(
         self,
@@ -66,7 +70,8 @@ class AmazonS3FileValidator(object):
         bucket,
         validators=[],
         delete_unvalidated_file=True,
-        new_file_prefix=''
+        new_file_prefix='',
+        new_file_acl='public-read',
     ):
         self.errors = []
         self.obj = bucket.Object(key_name)
@@ -81,6 +86,7 @@ class AmazonS3FileValidator(object):
         self.validators = validators
         self.delete_unvalidated_file = delete_unvalidated_file
         self.new_file_prefix = new_file_prefix
+        self.new_file_acl = new_file_acl
 
     def validate(self):
         """
@@ -119,7 +125,7 @@ class AmazonS3FileValidator(object):
             'Bucket': self.bucket.name,
             'Key': self.obj.key
         })
-        new_obj.Acl().put(ACL='public-read')
+        new_obj.Acl().put(ACL=self.new_file_acl)
         if self.delete_unvalidated_file:
             self.obj.delete()
         self.obj = new_obj

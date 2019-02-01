@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+2.2.0 (January 29th, 2019)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Add new_file_acl argument to AmazonS3FileValidator.
+
+
 2.1.0 (November 5th, 2018)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
