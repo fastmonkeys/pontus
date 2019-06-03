@@ -13,6 +13,10 @@ import subprocess
 from setuptools import Command, setup
 
 
+with open('README.rst', 'r') as fh:
+    long_description = fh.read()
+
+
 def get_version():
     filename = os.path.join(
         os.path.dirname(os.path.abspath(__file__)),
@@ -56,6 +60,8 @@ setup(
     author='Vesa Uimonen',
     author_email='vesa@fastmonkeys.com',
     description='Flask utility for Amazon S3.',
+    long_description=long_description,
+    long_description_content_type='text/x-rst',
     license='MIT',
     packages=['pontus'],
     zip_safe=False,
