@@ -6,6 +6,7 @@ import boto3
 import freezegun
 import pytest
 from flexmock import flexmock
+from datetime import date, datetime
 
 from pontus import AmazonS3SignedRequest
 from pontus._compat import force_text
@@ -24,7 +25,8 @@ class TestAmazonS3SignedRequest(object):
             expires_in=HOUR_IN_SECONDS,
             session=boto3.session.Session(
                 aws_access_key_id='test-key',
-                aws_secret_access_key='test-secret-key'
+                aws_secret_access_key='test-secret-key',
+                region_name='us-east-1',
             )
         )
 
@@ -34,17 +36,20 @@ class TestAmazonS3SignedRequest(object):
         )
 
     def test_get_signature(self, signed_request):
-        signature = signed_request._get_signature('some policy')
-        assert signature == '+kyVfzakuUYOwB4mwo2CuG5GiGI='
+        signature = signed_request._get_signature(date(2013, 1, 3), 'some policy')
+        assert signature == 'e4cf3577a9130b653b776a6626385311e3f5f415266cd548d582fc812293eb1b'
 
     def test_get_policy_document(self, signed_request):
         with freezegun.freeze_time('2007-12-01 12:05:37.572123'):
-            policy = signed_request._get_policy_document()
+            policy = signed_request._get_policy_document(datetime.utcnow())
         data_as_json = base64.b64decode(policy)
         data = json.loads(force_text(data_as_json))
         assert data == {
             'expiration': '2007-12-01T13:05:37.572123Z',
             'conditions': [
+                {'x-amz-algorithm': 'AWS4-HMAC-SHA256'},
+                {'x-amz-credential': 'test-key/20071201/us-east-1/s3/aws4_request'},
+                {'x-amz-date': '20071201T120537Z'},
                 {'bucket': 'test-bucket'},
                 {'key': 'test-unvalidated-uploads/file_name.png'},
                 {'acl': 'private'},
@@ -54,6 +59,7 @@ class TestAmazonS3SignedRequest(object):
             ]
         }
 
+    @freezegun.freeze_time('2007-12-01 12:05:37.572123')
     def test_form_fields(self, signed_request):
         (
             flexmock(signed_request)
@@ -66,13 +72,15 @@ class TestAmazonS3SignedRequest(object):
             .and_return(u'signature')
         )
         assert signed_request.form_fields == {
-            'AWSAccessKeyId': 'test-key',
+            'x-amz-algorithm': 'AWS4-HMAC-SHA256',
+            'x-amz-credential': 'test-key/20071201/us-east-1/s3/aws4_request',
+            'x-amz-date': '20071201T120537Z',
+            'x-amz-signature': 'signature',
             'acl': 'private',
             'Content-Type': 'image/png',
             'key': 'test-unvalidated-uploads/file_name.png',
-            'Policy': 'policy',
+            'policy': 'policy',
             'success_action_status': '201',
-            'Signature': 'signature',
         }
 
     def test_repr(self, signed_request):

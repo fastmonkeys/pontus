@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import base64
+import binascii
 import hmac
 import json
 import uuid
 from datetime import datetime, timedelta
-from hashlib import sha1
+from hashlib import sha256
 
 from flask import current_app
 
@@ -70,6 +71,11 @@ class AmazonS3SignedRequest(object):
     :param randomize:
         Indicates if a randomized UUID prefix should be added to the file key.
     """
+
+    service_name = 's3'
+    salt = 'aws4_request'
+    algorithm = 'AWS4-HMAC-SHA256'
+
     def __init__(
         self,
         key_name,
@@ -112,22 +118,37 @@ class AmazonS3SignedRequest(object):
 
         :return: a dictionary containing the needed field values
         """
-        policy = self._get_policy_document()
+        date = datetime.utcnow()
+        policy = self._get_policy_document(date)
         return {
-            'AWSAccessKeyId': self.session.get_credentials().access_key,
             'acl': self.acl,
             'Content-Type': self.mime_type,
             'key': self.key_name,
-            'Policy': policy,
+            'policy': policy,
+            'x-amz-algorithm': self.algorithm,
+            'x-amz-credential': self._get_credential(date),
+            'x-amz-date': date.strftime('%Y%m%dT%H%M%SZ'),
             'success_action_status': self.success_action_status,
-            'Signature': self._get_signature(policy),
+            'x-amz-signature': self._get_signature(date, policy),
         }
 
-    def _get_policy_document(self):
+    def _get_credential(self, date):
+        return '/'.join([
+            self.session.get_credentials().access_key,
+            date.strftime('%Y%m%d'),
+            self.session.region_name,
+            self.service_name,
+            self.salt
+        ])
+
+    def _get_policy_document(self, date):
         expiration = datetime.utcnow() + timedelta(seconds=self.expires_in)
         data = {
             'expiration': expiration.isoformat() + 'Z',
             'conditions': [
+                {'x-amz-algorithm': self.algorithm},
+                {'x-amz-credential': self._get_credential(date)},
+                {'x-amz-date': date.strftime('%Y%m%dT%H%M%SZ')},
                 {'bucket': self.bucket.name},
                 {'key': self.key_name},
                 {'acl': self.acl},
@@ -139,13 +160,32 @@ class AmazonS3SignedRequest(object):
         data = json.dumps(data)
         return force_text(base64.b64encode(force_bytes(data)))
 
-    def _get_signature(self, policy_document):
-        signature = base64.encodestring(hmac.new(
-            force_bytes(self.session.get_credentials().secret_key),
-            force_bytes(policy_document),
-            sha1
-        ).digest()).strip()
-        return force_text(signature)
+    def _sign(self, key, msg):
+        return hmac.new(
+            key,
+            msg.encode('utf-8'),
+            sha256
+        ).digest()
+
+    def _get_signing_key(self, date):
+        # Variable naming from the documentation
+        # https://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html
+        key = self.session.get_credentials().secret_key
+        dateStamp = date.strftime('%Y%m%d')
+        regionName = self.session.region_name
+        serviceName = self.service_name
+        salt = self.salt
+
+        kSecret = ('AWS4' + key).encode('utf-8')
+        kDate = self._sign(kSecret, dateStamp)
+        kRegion = self._sign(kDate, regionName)
+        kService = self._sign(kRegion, serviceName)
+        kSigning = self._sign(kService, salt)
+        return kSigning
+
+    def _get_signature(self, date, policy_document):
+        signing_key = self._get_signing_key(date)
+        return force_text(binascii.hexlify(self._sign(signing_key, policy_document)))
 
     def __repr__(self):
         return "<{cls} key_name='{key_name!s}'>".format(
