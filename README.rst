@@ -45,7 +45,8 @@ Creating form fields for a signed Amazon S3 POST request
 
     session = boto3.session.Session(
         aws_access_key_id=current_app.config.get('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=current_app.config.get('AWS_SECRET_ACCESS_KEY')
+        aws_secret_access_key=current_app.config.get('AWS_SECRET_ACCESS_KEY'),
+        region_name=current_app.config.get('AWS_REGION_NAME')
     )
     bucket = session.resource('s3').Bucket('testbucket')
 
