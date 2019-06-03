@@ -60,13 +60,15 @@ Creating form fields for a signed Amazon S3 POST request
     signed_request.form_fields
 
     # {
-    #     'AWSAccessKeyId': 'your-aws-access-key-id',
+    #     'x-amz-algorithm': 'AWS4-HMAC-SHA256',
+    #     'x-amz-credential': 'your-aws-access-key-id/date/region-name/s3/aws4_request',
+    #     'x-amz-date': 'date',
+    #     'x-amz-signature': 'generated-signature',
     #     'success_action_status': '201',
     #     'acl': 'public-read',
     #     'Content-Type': 'image/png',
     #     'key': u'f6c157e1-1a1a-4418-99fe-3362dcf7b1ea/images/my-image.jpg',
-    #     'Signature': 'generated-signature',
-    #     'Policy': 'generated-policy-document'
+    #     'policy': 'generated-policy-document'
     # }
 
 
