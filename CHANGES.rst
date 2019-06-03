@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+3.0.0 (June 3rd, 2019)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Update AmazonS3SignedRequest to use AWS Signature Version 4 instead of Version 2. BREAKING CHANGE: Session object must have region_name defined.
+
+
 2.2.0 (January 29th, 2019)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
