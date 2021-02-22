@@ -1,6 +1,11 @@
 Changelog
 ---------
 
+Unreleased
+^^^^^^^^^^
+
+- Add min_content_length parameter to AmazonS3SignedRequest. The default minimum length is set to 1 so this could break applications that rely on uploading empty attachment files.
+
 3.0.0 (June 3rd, 2019)
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
