@@ -4,6 +4,7 @@ Changelog
 Unreleased
 ^^^^^^^^^^
 
+- BREAKING CHANGE: Only support Python 3.8. Other Python versions might work, but aren't tested.
 - Add min_content_length parameter to AmazonS3SignedRequest. The default minimum length is set to 1 so this could break applications that rely on uploading empty attachment files.
 
 3.0.0 (June 3rd, 2019)
