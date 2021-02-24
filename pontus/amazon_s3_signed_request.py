@@ -70,6 +70,9 @@ class AmazonS3SignedRequest(object):
 
     :param randomize:
         Indicates if a randomized UUID prefix should be added to the file key.
+
+    :param min_content_length:
+        The minimum length of the file to be stored.
     """
 
     service_name = 's3'
@@ -87,6 +90,7 @@ class AmazonS3SignedRequest(object):
         success_action_status='201',
         max_content_length=None,
         randomize=False,
+        min_content_length=1,
     ):
         if randomize:
             key_name = u'%s/%s' % (uuid.uuid4(), key_name)
@@ -104,6 +108,7 @@ class AmazonS3SignedRequest(object):
             current_app.config.get('MAX_CONTENT_LENGTH') or
             20971520
         )
+        self.min_content_length = min_content_length
         self.mime_type = mime_type
         self.randomize = randomize
         self.bucket = bucket
@@ -153,7 +158,7 @@ class AmazonS3SignedRequest(object):
                 {'key': self.key_name},
                 {'acl': self.acl},
                 {'Content-Type': self.mime_type},
-                ['content-length-range', 0, self.max_content_length],
+                ['content-length-range', self.min_content_length, self.max_content_length],
                 {'success_action_status': self.success_action_status}
             ]
         }

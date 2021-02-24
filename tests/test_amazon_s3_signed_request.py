@@ -54,7 +54,7 @@ class TestAmazonS3SignedRequest(object):
                 {'key': 'test-unvalidated-uploads/file_name.png'},
                 {'acl': 'private'},
                 {'Content-Type': 'image/png'},
-                ['content-length-range', 0, 20971520],
+                ['content-length-range', 1, 20971520],
                 {'success_action_status': '201'},
             ]
         }
