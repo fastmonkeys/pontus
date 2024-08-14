@@ -93,6 +93,7 @@ class TestAmazonS3FileValidator(object):
         self,
         amazon_s3_file_validator
     ):
+        amazon_s3_file_validator.validate()
         assert not amazon_s3_file_validator.errors
 
     def test_validate_returns_false_when_validation_fails(
