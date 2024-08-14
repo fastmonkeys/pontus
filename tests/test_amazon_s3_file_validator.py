@@ -26,7 +26,10 @@ class TestAmazonS3FileValidator(object):
     @pytest.fixture
     def amazon_s3_file_validator(self, bucket):
         key_name = 'test-unvalidated-uploads/images/hello.jpg'
-        boto3.resource('s3').Object(bucket.name, key_name).put(Body='test')
+        boto3.resource('s3').Object(bucket.name, key_name).put(
+            Body='test',
+            ContentType='application/custom.test',
+        )
         return AmazonS3FileValidator(
             key_name=key_name,
             bucket=bucket,
@@ -137,6 +140,10 @@ class TestAmazonS3FileValidator(object):
         assert not amazon_s3_file_validator.obj.key.startswith(
             'test-unvalidated-uploads/'
         )
+
+    def test_validate_preserves_content_type(self, amazon_s3_file_validator):
+        amazon_s3_file_validator.validate()
+        assert amazon_s3_file_validator.obj.content_type == 'application/custom.test'
 
     def test_validate_doesnt_remove_unvalidated_prefix_file(
         self,

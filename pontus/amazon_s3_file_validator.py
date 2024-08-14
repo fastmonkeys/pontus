@@ -120,12 +120,19 @@ class AmazonS3FileValidator(object):
         new_name = self.new_file_prefix + self.obj.key[
             len(current_app.config.get('AWS_UNVALIDATED_PREFIX')):
         ]
+        ExtraArgs = {
+            'ACL': self.new_file_acl,
+        }
+        if self.obj.content_type:
+            ExtraArgs['ContentType'] = self.obj.content_type
         new_obj = self.bucket.Object(new_name)
-        new_obj.copy({
-            'Bucket': self.bucket.name,
-            'Key': self.obj.key
-        })
-        new_obj.Acl().put(ACL=self.new_file_acl)
+        new_obj.copy(
+            {
+                'Bucket': self.bucket.name,
+                'Key': self.obj.key,
+            },
+            ExtraArgs=ExtraArgs,
+        )
         if self.delete_unvalidated_file:
             self.obj.delete()
         self.obj = new_obj

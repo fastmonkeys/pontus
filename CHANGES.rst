@@ -1,6 +1,12 @@
 Changelog
 ---------
 
+4.1.0 (August 14th, 2024)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+- Preserve original file content type in AmazonS3FileValidator.
+- Combine ACL update to copy operation in AmazonS3FileValidator.
+
 4.0.0 (February 24th, 2021)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
