@@ -142,4 +142,4 @@ parameter :code:`obj`, which is a `boto.S3.Object`_ instance.
 .. _boto.S3.Object:
     http://boto3.readthedocs.io/en/latest/reference/services/s3.html#S3.Object
 
-.. |Build Status| image:: https://circleci.com/gh/fastmonkeys/pontus.png?circle-token=d6d8af8b7529f93824baff06002e819764a77431
+.. |Build Status| image:: https://dl.circleci.com/status-badge/img/gh/fastmonkeys/pontus/tree/master.svg?style=svg
