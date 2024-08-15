@@ -16,7 +16,7 @@ jobs:
           name: Install OS dependencies
           command: |
             apt-get update -qq
-            apt-get install -y --no-install-recommends python-dev locales
+            apt-get install -y --no-install-recommends python-dev-is-python3 locales
             echo en_US.UTF-8 UTF-8 >> /etc/locale.gen
             locale-gen
             pip install tox

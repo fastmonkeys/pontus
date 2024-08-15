@@ -48,7 +48,7 @@ extras_require = {
         'freezegun>=0.1.18',
         'py>=1.4.20',
         'pytest>=2.5.2',
-        'moto>=1.3.7',
+        'moto[s3]>=4,<5',
     ]
 }
 
